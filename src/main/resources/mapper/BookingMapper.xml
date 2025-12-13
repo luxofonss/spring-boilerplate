@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ds.ticketmaster.mapper.BookingMapper">
+  <resultMap id="BaseResultMap" type="com.ds.ticketmaster.entity.Booking">
+    <id column="id" jdbcType="OTHER" property="id" typeHandler="com.ds.ticketmaster.config.database.UUIDTypeHandler" />
+    <result column="user_id" jdbcType="OTHER" property="userId" typeHandler="com.ds.ticketmaster.config.database.UUIDTypeHandler" />
+    <result column="event_id" jdbcType="OTHER" property="eventId" typeHandler="com.ds.ticketmaster.config.database.UUIDTypeHandler" />
+    <result column="amount" jdbcType="NUMERIC" property="amount" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
+    <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.util.UUID">
+    delete from bookings
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </delete>
+  <insert id="insert" parameterType="com.ds.ticketmaster.entity.Booking">
+    insert into bookings (id, 
+      user_id, 
+      event_id, 
+      amount, status, created_at, 
+      updated_at)
+    values (#{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      #{userId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      #{eventId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      #{amount,jdbcType=NUMERIC}, #{status,jdbcType=VARCHAR}, #{createdAt,jdbcType=TIMESTAMP}, 
+      #{updatedAt,jdbcType=TIMESTAMP})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.ds.ticketmaster.entity.Booking">
+    update bookings
+    set user_id = #{userId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      event_id = #{eventId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      amount = #{amount,jdbcType=NUMERIC},
+      status = #{status,jdbcType=VARCHAR},
+      created_at = #{createdAt,jdbcType=TIMESTAMP},
+      updated_at = #{updatedAt,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.util.UUID" resultMap="BaseResultMap">
+    select id, user_id, event_id, amount, status, created_at, updated_at
+    from bookings
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select id, user_id, event_id, amount, status, created_at, updated_at
+    from bookings
+  </select>
+</mapper>

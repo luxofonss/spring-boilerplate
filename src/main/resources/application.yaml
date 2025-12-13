@@ -1,0 +1,118 @@
+spring:
+  application:
+    name: ticketmaster
+  messages:
+    basename: i18n/errors
+    encoding: UTF-8
+
+  datasource:
+    master:
+      driver-class-name: org.postgresql.Driver
+      jdbc-url: jdbc:postgresql://localhost:5431/ticketmaster_db
+      username: ticketmaster
+      password: ticketmaster_secret
+      hikari:
+        maximum-pool-size: 10
+        pool-name: MasterHikariCP
+
+    slave:
+      driver-class-name: org.postgresql.Driver
+      jdbc-url: jdbc:postgresql://localhost:5433/ticketmaster_db
+      username: ticketmaster
+      password: ticketmaster_secret
+      hikari:
+        maximum-pool-size: 10
+        pool-name: SlaveHikariCP
+        read-only: true
+
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://localhost:5431/ticketmaster_db
+    user: ticketmaster
+    password: ticketmaster_secret
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+    out-of-order: false
+    table: flyway_schema_history
+    schemas:
+      - public
+
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:29092,localhost:39092
+    consumer:
+      enable-auto-commit: false # manual commit
+      auto-offset-reset: latest
+      max-poll-records: 500
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        isolation.level: read_committed
+        spring.json.trusted.packages: "*"
+        max.poll.interval.ms: 300000
+        spring.kafka.listener.ack-mode: MANUAL_IMMEDIATE
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        acks: all
+        enable.idempotence: true
+        linger.ms: 50
+        batch.size: 65536
+        compression.type: snappy
+        spring.json.add.type.headers: false
+
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-handlers-package: com.ds.ticketmaster.config.mybatis
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: com.ds.ticketmaster.config.database.GenericEnumTypeHandler
+
+app:
+  cache:
+    local:
+      enable: true
+      timeout-seconds: 300
+
+    redis:
+      enable: true
+      host: localhost
+      port: 6379
+      password:
+      timeout-seconds: 600
+      key-prefix: ticketmaster
+      cache-expirations:
+        events: 1800
+        bookings: 300
+      max-total: 1000
+      max-idle: 100
+      min-idle: 10
+      max-wait-millis: 3000
+      cluster-connect-timeout: 10000       # ms
+      cluster-retry-interval: 1500         # ms
+      cluster-retry-attempts: 3
+      shutdown-timeout-millis: 100         # ms
+      master-connection-pool-size: 1000
+      slave-connection-pool-size: 1000
+      scan-count: 5
+      redisson-acquisition-time: 3000
+      redisson-unlock-after-time: 10000
+  topic:
+    random-topic: random-topic
+    payment-topic: payment-topic
+  group:
+    ticketmaster-processor-group: ticketmaster-processor-group
+    payment-processor-group: payment-processor-group
+logging:
+  level:
+    root: INFO
+    com.ds.ticketmaster: DEBUG
+    org.flywaydb: INFO
+
+thread:
+  executor:
+    concurrency: 8

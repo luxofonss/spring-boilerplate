@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ds.ticketmaster.mapper.SeatInventoryMapper">
+  <resultMap id="BaseResultMap" type="com.ds.ticketmaster.entity.SeatInventory">
+    <id column="id" jdbcType="OTHER" property="id" typeHandler="com.ds.ticketmaster.config.database.UUIDTypeHandler" />
+    <result column="event_id" jdbcType="OTHER" property="eventId" typeHandler="com.ds.ticketmaster.config.database.UUIDTypeHandler" />
+    <result column="seat_type_id" jdbcType="OTHER" property="seatTypeId" typeHandler="com.ds.ticketmaster.config.database.UUIDTypeHandler" />
+    <result column="seat_num" jdbcType="VARCHAR" property="seatNum" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="version" jdbcType="INTEGER" property="version" />
+    <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
+    <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.util.UUID">
+    delete from seat_inventories
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </delete>
+  <insert id="insert" parameterType="com.ds.ticketmaster.entity.SeatInventory">
+    insert into seat_inventories (id, 
+      event_id, 
+      seat_type_id, 
+      seat_num, status, version, 
+      created_at, updated_at)
+    values (#{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      #{eventId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      #{seatTypeId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      #{seatNum,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, #{version,jdbcType=INTEGER}, 
+      #{createdAt,jdbcType=TIMESTAMP}, #{updatedAt,jdbcType=TIMESTAMP})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.ds.ticketmaster.entity.SeatInventory">
+    update seat_inventories
+    set event_id = #{eventId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      seat_type_id = #{seatTypeId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      seat_num = #{seatNum,jdbcType=VARCHAR},
+      status = #{status,jdbcType=VARCHAR},
+      version = #{version,jdbcType=INTEGER},
+      created_at = #{createdAt,jdbcType=TIMESTAMP},
+      updated_at = #{updatedAt,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.util.UUID" resultMap="BaseResultMap">
+    select id, event_id, seat_type_id, seat_num, status, version, created_at, updated_at
+    from seat_inventories
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select id, event_id, seat_type_id, seat_num, status, version, created_at, updated_at
+    from seat_inventories
+  </select>
+</mapper>

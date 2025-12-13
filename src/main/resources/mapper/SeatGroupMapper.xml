@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ds.ticketmaster.mapper.SeatGroupMapper">
+  <resultMap id="BaseResultMap" type="com.ds.ticketmaster.entity.SeatGroup">
+    <id column="id" jdbcType="OTHER" property="id" typeHandler="com.ds.ticketmaster.config.database.UUIDTypeHandler" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="price" jdbcType="NUMERIC" property="price" />
+    <result column="event_id" jdbcType="OTHER" property="eventId" typeHandler="com.ds.ticketmaster.config.database.UUIDTypeHandler" />
+    <result column="total_quantity" jdbcType="INTEGER" property="totalQuantity" />
+    <result column="is_reserved_seating" jdbcType="BIT" property="isReservedSeating" />
+    <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
+    <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.util.UUID">
+    delete from seat_groups
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </delete>
+  <insert id="insert" parameterType="com.ds.ticketmaster.entity.SeatGroup">
+    insert into seat_groups (id, 
+      name, description, price, 
+      event_id, 
+      total_quantity, is_reserved_seating, created_at, 
+      updated_at)
+    values (#{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      #{name,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{price,jdbcType=NUMERIC}, 
+      #{eventId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      #{totalQuantity,jdbcType=INTEGER}, #{isReservedSeating,jdbcType=BIT}, #{createdAt,jdbcType=TIMESTAMP}, 
+      #{updatedAt,jdbcType=TIMESTAMP})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.ds.ticketmaster.entity.SeatGroup">
+    update seat_groups
+    set name = #{name,jdbcType=VARCHAR},
+      description = #{description,jdbcType=VARCHAR},
+      price = #{price,jdbcType=NUMERIC},
+      event_id = #{eventId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler},
+      total_quantity = #{totalQuantity,jdbcType=INTEGER},
+      is_reserved_seating = #{isReservedSeating,jdbcType=BIT},
+      created_at = #{createdAt,jdbcType=TIMESTAMP},
+      updated_at = #{updatedAt,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.util.UUID" resultMap="BaseResultMap">
+    select id, name, description, price, event_id, total_quantity, is_reserved_seating, 
+    created_at, updated_at
+    from seat_groups
+    where id = #{id,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select id, name, description, price, event_id, total_quantity, is_reserved_seating, 
+    created_at, updated_at
+    from seat_groups
+  </select>
+</mapper>
