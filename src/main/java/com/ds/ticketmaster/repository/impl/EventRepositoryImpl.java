@@ -57,4 +57,9 @@ public class EventRepositoryImpl implements EventRepository {
             throw new BusinessException(ErrorConstant.NOT_FOUND);
         }
     }
+
+    @Override
+    public Event getById(String eventId) {
+        return eventMapper.selectByPrimaryKey(UUID.fromString(eventId));
+    }
 }

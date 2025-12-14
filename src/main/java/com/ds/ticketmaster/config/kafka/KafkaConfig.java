@@ -1,9 +1,18 @@
 package com.ds.ticketmaster.config.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.validation.ValidationException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.errors.AuthenticationException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
@@ -11,13 +20,6 @@ import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
-import org.springframework.util.backoff.FixedBackOff;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.EnableKafka;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,9 +61,6 @@ public class KafkaConfig {
     @Value("${spring.kafka.producer.properties.compression.type}")
     private String compressionType;
 
-    @Value("${app.topic.random-topic}")
-    private String randomTopic;
-
     // Producer Configuration
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
@@ -89,14 +88,14 @@ public class KafkaConfig {
         // Use ErrorHandlingDeserializer to prevent infinite loops on poison pills (malformed messages)
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-        
+
         // Delegate deserializers
         props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
         props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-        
+
         // Default type if no headers are present (e.g. manual publish via CLI/UI)
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "java.util.HashMap");
-        
+
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, enableAutoCommit);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
@@ -110,15 +109,30 @@ public class KafkaConfig {
     public DefaultErrorHandler commonErrorHandler(KafkaTemplate<String, Object> kafkaTemplate) {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate);
 
-        ExponentialBackOffWithMaxRetries backOff = new ExponentialBackOffWithMaxRetries(5);
+        ExponentialBackOffWithMaxRetries backOff = new ExponentialBackOffWithMaxRetries(7);
         backOff.setInitialInterval(1000L);
         backOff.setMultiplier(2.0);
-        backOff.setMaxInterval(10000L);
+        backOff.setMaxInterval(30000L);
 
-        return new DefaultErrorHandler(
-                recoverer,
-                backOff
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, backOff);
+
+        errorHandler.addNotRetryableExceptions(
+                IllegalArgumentException.class,
+                JsonProcessingException.class,
+                ValidationException.class,
+                AuthenticationException.class
         );
+
+        return errorHandler;
+    }
+
+    @Bean("commonKafkaListenerContainerFactory")
+    public ConcurrentKafkaListenerContainerFactory<String, Object> commonKafkaListenerContainerFactory(DefaultErrorHandler commonErrorHandler) {
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        factory.setCommonErrorHandler(commonErrorHandler);
+        return factory;
     }
 
     @Bean("strictKafkaListenerContainerFactory")

@@ -11,4 +11,6 @@ public interface EventRepository {
 
     EventDetailDTO getEventDetail(String id);
 
+    Event getById(String eventId);
+
 }

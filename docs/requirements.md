@@ -1,4 +1,4 @@
-## Functional Requirements
+ bsanj## Functional Requirements
 - Create an event
 - View an event
 - Search for events
@@ -89,3 +89,49 @@
 - Cron job Reconciliation to keep consistency
 - Soft Lock Extension when user purchase
 - Cache stampede prevention 
+
+
+## detail flow
+- receive booking request via api gateway.
+- check for duplicate session (redis):
+    * key: `session:user:{user_id}:event:{event_id}`
+    * type: string
+    * purpose: prevents double-clicks/multiple active attempts.
+    * if duplicate: return "already in queue" with existing token.
+- calculate estimated queue position (redis):
+    - perform: `incr total:ingestion_count:{event_id}`
+    - purpose: provides instant, non-binding queue number for better ux. for more accuracy, optionally query zcard(`waiting_list:{event_id}`) + get(`counter:active_room:{event_id}`) atomically.
+- log message to topic a: `initial_booking_requests` (kafka).
+- return token with `status=queued` to the client.
+- consumer triage reads messages from topic a.
+- perform atomic slot check and increment (redis lua script):
+    * key: `counter:active_room:{event_id}`
+    * type: string (integer)
+    * purpose: tracks the total number of users currently allowed in the 10-minute room (n limit).
+    * lua: get count, if count < n then incr and return success, else return fail.
+- if successful (incr done), push message to topic b: `active_room_topic`.
+- if failed, store user in redis zset: `waiting_list:{event_id}`.
+    * member: `{user_id}`
+    * score: `timestamp` (ensures fifo fairness).
+- commit offset for topic a.
+- consumer booking reads message from topic b.
+- set up delayed queue: add to redis zset `delayed_timeouts:{event_id}` with member `{user_id:request_id}` and score = current_timestamp + 600 (10 minutes).
+- notify client via websocket: status=active, user can now select seat.
+- separate poller consumer periodically checks zset: use zrangebyscore `delayed_timeouts:{event_id}` -inf current_timestamp to get expired tasks, process (send to topic c: `slot_released`), then zrem them atomically (e.g., via lua script).
+- user selects seat via api: establish distributed lock (redis setnx) on the seat id:
+    * key: `lock:seat:{seat_id}`
+    * type: string
+    * ttl: 600 seconds (10 minutes)
+    * purpose: prevents simultaneous purchase of the same seat.
+- process payment via payment gateway.
+- upon success:
+    - seat has number: perform atomic db update (`listingstatus = sold`). delete the seat lock key from redis.
+    - seat doesn't have number but group, decrease quantity.
+    - send message to topic c: `slot_released`. also zrem from `delayed_timeouts:{event_id}` to cancel timeout.
+- upon payment failure: delete the seat lock key from redis (release early), send message to topic c: `slot_released`. also zrem from `delayed_timeouts:{event_id}`.
+- if user abandons (no action in 10 min): poller triggers topic c.
+- handle topic `slot_released`: perform redis atomic decr `counter:active_room:{event_id}` (lua script for decr if >0). also decr `total:ingestion_count:{event_id}`.
+- consumer invitation reads message from topic c (or triggered by timeout).
+- retrieve the longest waiting user (lowest score) from redis zset: `waiting_list:{event_id}` (use zpopmin for atomic remove).
+- push the invited user's message back to topic a: `initial_booking_requests` (to re-check atomic slot).
+- send websocket notification to the invited user: status=invited, wait for active.

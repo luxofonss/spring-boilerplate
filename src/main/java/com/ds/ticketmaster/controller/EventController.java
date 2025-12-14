@@ -2,14 +2,12 @@ package com.ds.ticketmaster.controller;
 
 import com.ds.ticketmaster.dto.BaseResponse;
 import com.ds.ticketmaster.dto.EventDetailDTO;
+import com.ds.ticketmaster.dto.ReservationRequestDTO;
 import com.ds.ticketmaster.entity.Event;
 import com.ds.ticketmaster.service.BaseService;
 import com.ds.ticketmaster.service.EventService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,5 +28,11 @@ public class EventController {
     @GetMapping("/{id}")
     public BaseResponse<EventDetailDTO>getEventDetail(@PathVariable String id) {
         return baseService.ofSucceeded(eventService.getEventDetail(id));
+    }
+
+    @PostMapping("/{id}/reservations")
+    public BaseResponse<Object> reserveSeat(@PathVariable String id,
+                                            @RequestBody ReservationRequestDTO request) {
+        return baseService.ofSucceeded(eventService.processReservationRequest(id, request));
     }
 }

@@ -20,4 +20,6 @@ public interface SeatGroupMapper {
     List<SeatGroup> selectByEventId(@Param("eventId") UUID eventId);
 
     int updateByPrimaryKey(SeatGroup row);
+
+    SeatGroup selectByIdAndEventId(@Param("id") UUID id, @Param("eventId") UUID eventId);
 }
