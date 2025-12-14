@@ -51,4 +51,9 @@
     created_at, updated_at
     from seat_groups
   </select>
+  <select id="selectByEventId" parameterType="java.util.UUID" resultMap="BaseResultMap">
+    select id, name, description, price, event_id, total_quantity, is_reserved_seating, created_at, updated_at
+    from seat_groups
+    where event_id = #{eventId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </select>
 </mapper>

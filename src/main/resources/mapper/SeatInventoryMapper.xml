@@ -47,4 +47,9 @@
     select id, event_id, seat_type_id, seat_num, status, version, created_at, updated_at
     from seat_inventories
   </select>
+  <select id="selectBySeatGroupId" parameterType="java.util.UUID" resultMap="BaseResultMap">
+    select id, event_id, seat_type_id, seat_num, status, version, created_at, updated_at
+    from seat_inventories
+    where seat_type_id = #{seatGroupId,jdbcType=OTHER,typeHandler=com.ds.ticketmaster.config.database.UUIDTypeHandler}
+  </select>
 </mapper>

@@ -4,7 +4,8 @@ spring:
   messages:
     basename: i18n/errors
     encoding: UTF-8
-
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
   datasource:
     master:
       driver-class-name: org.postgresql.Driver
@@ -40,7 +41,7 @@ spring:
       - public
 
   kafka:
-    bootstrap-servers: localhost:19092,localhost:29092,localhost:39092
+    bootstrap-servers: localhost:19092
     consumer:
       enable-auto-commit: false # manual commit
       auto-offset-reset: latest

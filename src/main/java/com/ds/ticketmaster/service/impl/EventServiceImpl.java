@@ -2,8 +2,10 @@ package com.ds.ticketmaster.service.impl;
 
 import com.ds.ticketmaster.config.kafka.KafkaProducer;
 import com.ds.ticketmaster.config.kafka.KafkaTopicConfig;
+import com.ds.ticketmaster.dto.EventDetailDTO;
 import com.ds.ticketmaster.entity.Event;
 import com.ds.ticketmaster.mapper.EventMapper;
+import com.ds.ticketmaster.repository.EventRepository;
 import com.ds.ticketmaster.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ public class EventServiceImpl implements EventService {
     private final KafkaProducer kafkaProducer;
     private final KafkaTopicConfig kafkaTopicConfig;
     private final EventMapper eventMapper;
+    private final EventRepository eventRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -29,5 +32,10 @@ public class EventServiceImpl implements EventService {
         kafkaProducer.produce(kafkaTopicConfig.getRandomKafkaTopic(), eventLog);
 
         return eventMapper.selectAll();
+    }
+
+    @Override
+    public EventDetailDTO getEventDetail(String id) {
+        return eventRepository.getEventDetail(id);
     }
 }
