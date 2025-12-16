@@ -96,13 +96,16 @@
 - check for duplicate session (redis):
     * key: `session:user:{user_id}:event:{event_id}`
     * type: string
+    * value: token
+    * ttl: 1 day (based on use case)
     * purpose: prevents double-clicks/multiple active attempts.
     * if duplicate: return "already in queue" with existing token.
 - calculate estimated queue position (redis):
     - perform: `incr total:ingestion_count:{event_id}`
-    - purpose: provides instant, non-binding queue number for better ux. for more accuracy, optionally query zcard(`waiting_list:{event_id}`) + get(`counter:active_room:{event_id}`) atomically.
+    - purpose: provides instant, non-binding queue number for better ux. 
+    - for more accuracy, optionally query zcard(`waiting_list:{event_id}`) + get(`counter:active_room:{event_id}`) atomically.
 - log message to topic a: `initial_booking_requests` (kafka).
-- return token with `status=queued` to the client.
+- return token with `status=queued` and queue number to the client.
 - consumer triage reads messages from topic a.
 - perform atomic slot check and increment (redis lua script):
     * key: `counter:active_room:{event_id}`
@@ -127,7 +130,13 @@
 - upon success:
     - seat has number: perform atomic db update (`listingstatus = sold`). delete the seat lock key from redis.
     - seat doesn't have number but group, decrease quantity.
-    - send message to topic c: `slot_released`. also zrem from `delayed_timeouts:{event_id}` to cancel timeout.
+    - zpopmin waiting_list (atomic get + remove)
+    - if user exists:
+       - not decr counter (keep slot reserved)
+       - push to topic B directly (bypass topic A)
+       - notify user: status=active
+    - else (no waiting user):
+       - decr counter (release slot)
 - upon payment failure: delete the seat lock key from redis (release early), send message to topic c: `slot_released`. also zrem from `delayed_timeouts:{event_id}`.
 - if user abandons (no action in 10 min): poller triggers topic c.
 - handle topic `slot_released`: perform redis atomic decr `counter:active_room:{event_id}` (lua script for decr if >0). also decr `total:ingestion_count:{event_id}`.
@@ -135,3 +144,14 @@
 - retrieve the longest waiting user (lowest score) from redis zset: `waiting_list:{event_id}` (use zpopmin for atomic remove).
 - push the invited user's message back to topic a: `initial_booking_requests` (to re-check atomic slot).
 - send websocket notification to the invited user: status=invited, wait for active.
+- optimize seat selection with bloom filter
+  - Tránh query DB cho seats đã sold
+    - Cache seats available trong Redis Set
+      - redis.sadd(available_seats:{event_id}, *seat_ids)
+    
+    - Khi user chọn ghế
+      - if redis.sismember(available_seats:{event_id}, seat_id):
+    - Try lock
+      - if redis.set(lock:seat:{seat_id}, user_id, nx=True, ex=600):
+      - redis.srem(available_seats:{event_id}, seat_id)
+    - Process payment
