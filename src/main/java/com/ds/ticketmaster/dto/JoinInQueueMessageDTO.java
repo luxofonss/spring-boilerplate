@@ -9,9 +9,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class JoinInQueueResponseDTO {
+public class JoinInQueueMessageDTO {
 
-    private Boolean alreadyInQueue;
+    private Long userId;
+
+    private String eventId;
 
     private Long sequence;
 

@@ -13,7 +13,6 @@ import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -179,16 +178,6 @@ public class RedisService {
      */
     public Long increaseKeyBy(String key, Long value) {
         return redisTemplate.opsForValue().increment(key, value);
-    }
-
-    public Long executeJoinQueueScript(String counterKey, String sessionKey, Object sessionCache, Long ttl) {
-        Object serializedSessionCache = redisTemplate.getValueSerializer().serialize(sessionCache);
-        return redisTemplate.execute(
-                joinQueueScript,
-                List.of(counterKey, sessionKey), // KEYS[1], KEYS[2]
-                serializedSessionCache,           // ARGV[1]
-                ttl.toString()                    // ARGV[2]
-        );
     }
 
     public <T> void setHash(String key, T object, long timeout) {

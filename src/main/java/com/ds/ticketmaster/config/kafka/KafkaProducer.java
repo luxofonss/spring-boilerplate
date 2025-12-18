@@ -1,6 +1,5 @@
 package com.ds.ticketmaster.config.kafka;
 
-import com.ds.ticketmaster.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
